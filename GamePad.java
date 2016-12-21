@@ -4,10 +4,12 @@ import com.qualcomm.robotcore.hardware.Gamepad;
  * Created by SaajanPatel on 12/3/16.
  */
 
- class GamepadWrapper
+class GamepadWrapper
 {
     public class ButtonMap
     {
+        public float left_trigger = 0;
+        public float right_trigger = 0;
         public boolean dpad_up = false;
         public boolean dpad_down = false;
         public boolean dpad_right = false;
@@ -33,6 +35,8 @@ import com.qualcomm.robotcore.hardware.Gamepad;
     private void updateButtonMap(ButtonMap map, Gamepad gamepad)
 
     {
+        map.left_trigger = gamepad.left_trigger;
+        map.right_trigger = gamepad.right_trigger;
         map.dpad_up = gamepad.dpad_up;
         map.dpad_down = gamepad.dpad_down;
         map.dpad_right = gamepad.dpad_right;
@@ -51,6 +55,14 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 
     public void update(Gamepad gamepad)
     {
+        if (gamepad.right_trigger > 0 )
+        {
+            toggle.right_trigger = gamepad.right_trigger;
+        }
+        if (gamepad.left_trigger > 0 )
+        {
+            toggle.left_trigger = gamepad.left_trigger;
+        }
         if (!gamepad.dpad_up && previousButtonStates.dpad_up)
         {
             toggle.dpad_up = !toggle.dpad_up;
@@ -119,6 +131,12 @@ import com.qualcomm.robotcore.hardware.Gamepad;
     public String toString()
     {
         String toggleStr = "";
+        if(toggle.right_trigger>0){
+            toggleStr = toggleStr + "tog.right_trigger " +  toggle.right_trigger;
+        }
+        if(toggle.left_trigger>0){
+            toggleStr = toggleStr + "tog.left_trigger " +  toggle.left_trigger;
+        }
         if(toggle.dpad_up) {
             toggleStr = toggleStr + "tog.dpad_up ";
         }
@@ -168,3 +186,4 @@ import com.qualcomm.robotcore.hardware.Gamepad;
     }
 }
 //Save
+
