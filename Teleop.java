@@ -42,8 +42,8 @@ import com.qualcomm.robotcore.hardware.Gamepad;
         double right;
         left = -gamepad1.right_stick_y;
         right = -gamepad1.left_stick_y;
-        //drivetrain.Left1.setPower(left);
-        //drivetrain.Left2.setPower(left);
+        drivetrain.Left1.setPower(left);
+        drivetrain.Left2.setPower(left);
         drivetrain.Right1.setPower(right);
         drivetrain.Right2.setPower(right);
 
