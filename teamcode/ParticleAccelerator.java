@@ -34,10 +34,16 @@ class ParticleAccelerator {
 
 
     public void run() {
-        ShooterLeft.setPower(1.0);
-        ShooterRight.setPower(1.0);
+       //do we need this now? 
+        //ShooterLeft.setPower(1.0);
+       // ShooterRight.setPower(1.0);
+        
+        //sets the speed for the Particle shooter
+        for (float speed = 0; speed <= 1; speed += 0.2) {
+            ShooterLeft.setPower(speed);
+            ShooterRight.setPower(speed);
 
-        AcceleratorState = acceleratorEnum.Run;
+            AcceleratorState = acceleratorEnum.Run;
     }
 
     public void stop() {
@@ -57,6 +63,8 @@ class ParticleAccelerator {
             default:
                 return "Unknown";
         }
+
+
+
     }
 }
-
