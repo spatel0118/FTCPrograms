@@ -62,12 +62,12 @@ class Teleop_Iteration_1 extends OpMode{
 
 
 
-        if (joy1.toggle.left_trigger >= 0.5) {
+        if (joy1.toggle.left_trigger >= 0.1) {
 
             Pickup.run();
 
         }
-        else {
+        else  {
             Pickup.stop();
 
         }
@@ -78,10 +78,70 @@ class Teleop_Iteration_1 extends OpMode{
          */
 
 
-     if (joy1.toggle.right_trigger >= 0.5) {
+        if (joy1.toggle.right_trigger >= 0.1) {
 
 
-            Shooter.run();
+            Shooter.run1();
+
+        }
+        else if(joy1.toggle.right_trigger >= 0.2) {
+
+
+            Shooter.run2();
+
+        }
+        else if(joy1.toggle.right_trigger >= 0.3) {
+
+
+            Shooter.run3();
+
+        }
+        else if(joy1.toggle.right_trigger >= 0.4) {
+
+
+            Shooter.run4();
+
+        }
+        else if(joy1.toggle.right_trigger >= 0.5) {
+
+
+            Shooter.run5();
+
+        }
+        else if(joy1.toggle.right_trigger >= 0.6) {
+
+
+            Shooter.run6();
+
+        }
+        else if(joy1.toggle.right_trigger >= 0.7) {
+
+
+            Shooter.run7();
+
+        }
+        else if(joy1.toggle.right_trigger >= 0.7) {
+
+
+            Shooter.run7();
+
+        }
+        else if(joy1.toggle.right_trigger >= 0.8) {
+
+
+            Shooter.run8();
+
+        }
+        else if(joy1.toggle.right_trigger >= 0.9) {
+
+
+            Shooter.run9();
+
+        }
+        else if(joy1.toggle.right_trigger >= 1.0) {
+
+
+            Shooter.run10();
 
         }
         else {
@@ -115,7 +175,7 @@ class Teleop_Iteration_1 extends OpMode{
             Pickup.Reverse();
             Pickup.run();
         }
-        else if (joy1.toggle.left_trigger <= 0.5){
+        else if (joy1.toggle.left_trigger < 0.1){
             Pickup.Forward();
             Pickup.stop();
             Pickup.stop();
