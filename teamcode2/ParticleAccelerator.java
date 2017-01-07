@@ -32,72 +32,12 @@ class ParticleAccelerator {
         this.ShooterLeft = hardwareMap.dcMotor.get(ShooterLeft);
     }
 
-    public void run10() {
+    public void run() {
         ShooterLeft.setPower(1.0);
         ShooterRight.setPower(-1.0);
 
         AcceleratorState = acceleratorEnum.Run;
     }
-    public void run9() {
-        ShooterLeft.setPower(0.9);
-        ShooterRight.setPower(-0.9);
-
-        AcceleratorState = acceleratorEnum.Run;
-    }
-    public void run8() {
-        ShooterLeft.setPower(0.8);
-        ShooterRight.setPower(-0.8);
-
-        AcceleratorState = acceleratorEnum.Run;
-    }
-    public void run7() {
-        ShooterLeft.setPower(0.7);
-        ShooterRight.setPower(-0.7);
-
-        AcceleratorState = acceleratorEnum.Run;
-    }
-
-    public void run6() {
-        ShooterLeft.setPower(0.6);
-        ShooterRight.setPower(-0.6);
-
-        AcceleratorState = acceleratorEnum.Run;
-    }
-
-    public void run5() {
-        ShooterLeft.setPower(0.5);
-        ShooterRight.setPower(-0.5);
-
-        AcceleratorState = acceleratorEnum.Run;
-    }
-    public void run4() {
-        ShooterLeft.setPower(0.4);
-        ShooterRight.setPower(-0.4);
-
-        AcceleratorState = acceleratorEnum.Run;
-    }
-
-    public void run3() {
-        ShooterLeft.setPower(0.3);
-        ShooterRight.setPower(-0.3);
-
-        AcceleratorState = acceleratorEnum.Run;
-    }
-
-    public void run2() {
-        ShooterLeft.setPower(0.2);
-        ShooterRight.setPower(-0.2);
-
-        AcceleratorState = acceleratorEnum.Run;
-    }
-
-    public void run1() {
-        ShooterLeft.setPower(0.1);
-        ShooterRight.setPower(-0.1);
-
-        AcceleratorState = acceleratorEnum.Run;
-    }
-
 
 
     public void stop() {
