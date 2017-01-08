@@ -1,7 +1,7 @@
-package org.firstinspires.ftc.teamcode;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.HardwareMap;
+    package org.firstinspires.ftc.teamcode;
+    import com.qualcomm.robotcore.hardware.DcMotor;
+    import com.qualcomm.robotcore.hardware.DcMotorSimple;
+    import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Pickup {
 
@@ -20,7 +20,7 @@ public class Pickup {
         hwMap = ahwMap;
         Pickup = hwMap.dcMotor.get("Pickup");
 
-        Pickup.setDirection(DcMotor.Direction.REVERSE);
+        Pickup.setDirection(DcMotor.Direction.FORWARD);
 
 
     }
@@ -33,6 +33,7 @@ public class Pickup {
     {
         Pickup.setDirection(DcMotor.Direction.REVERSE);
     }
+
 
     public void Forward()
     {
