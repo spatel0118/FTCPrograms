@@ -1,5 +1,8 @@
 
 package org.firstinspires.ftc.teamcode;
+import android.os.SystemClock;
+import android.provider.Settings;
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -19,10 +22,13 @@ class ParticleAccelerator {
     HardwareMap hwMap = null;
 
 
+    //Max encoder clicks per second
+    public static final int SHOOTER_MAX_SPEED = 4000;
 
-    public static final int  SHOOTER_MAX_SPEED    = 4000;
-    public static final double SHOOTER_LEFT_POWER  =  0.136;
-    public static final double SHOOTER_RIGHT_POWER   =  -0.136;
+
+    //Percentage of speed
+    public static final double SHOOTER_LEFT_POWER = 0.136;
+    public static final double SHOOTER_RIGHT_POWER = -0.136;
 
 
     public void init(HardwareMap ahwMap) {
@@ -40,10 +46,30 @@ class ParticleAccelerator {
         ShooterLeft.setMaxSpeed(SHOOTER_MAX_SPEED);
         ShooterRight.setMaxSpeed(SHOOTER_MAX_SPEED);
 
+    }
+    // formula for setting RPM. Ask colin mom for help
+   /* public int getCurrentPos() {
 
+                                                            //is this right?
+      *  int currentPos = ShooterLeft.getCurrentPosition();
+       * return currentPos;
+    }
+
+
+
+    public double getPower() {return ShooterLeft.getPower();}
+    public double getRate () {
+        double posC = getCurrentPos() - prevPos;
+        double tChange = System.nanoTime() - priviousTime;
+         previousTime = System.nanoTime();
+        tChange = tChange /1e9;
+        prevPos = getCurrentPos();
+        return posC/ tChange;
 
     }
 
+
+  */
 
     public ParticleAccelerator(String ShooterRight, String ShooterLeft, HardwareMap hardwareMap) {
         this.ShooterRight = hardwareMap.dcMotor.get(ShooterRight);
@@ -80,6 +106,25 @@ class ParticleAccelerator {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
