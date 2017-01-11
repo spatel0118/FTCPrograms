@@ -1,0 +1,91 @@
+package org.firstinspires.ftc.teamcode.Autonomous;
+
+import ftclib.FtcDcMotor;
+import ftclib.FtcServo;
+import ftclib.FtcTouchSensor;
+import trclib.TrcEvent;
+import trclib.TrcPidController;
+import trclib.TrcPidMotor;
+import trclib.TrcRobot;
+import trclib.TrcStateMachine;
+import trclib.TrcTaskMgr;
+import trclib.TrcTimer;
+
+
+
+public class Shooter implements TrcTaskMgr.Task, TrcPidController.PidInput
+{
+    private enum ShooterState
+    {
+        PICKUP_PARTICLE,
+        FIRE,
+        DONE
+    }   //enum ShooterState
+
+    private String instanceName;
+    private FtcDcMotor ShooterRight;
+    private FtcDcMotor ShooterLeft;
+    private TrcPidController pidCtrl;
+    private TrcPidMotor pidMotor;
+    private FtcTouchSensor touchSensor;
+    private FtcServo ballGate;
+    private TrcStateMachine<ShooterState> sm;
+    private TrcTimer timer;
+    private TrcEvent event;
+    private TrcEvent completionEvent = null;
+    private boolean continuousModeOn = false;
+
+    public Shooter(String instanceName) {
+        this.instanceName = instanceName;
+
+        ShooterRight = new FtcDcMotor("shooterMotor");
+        ShooterRight.setInverted(true);
+        ShooterRight.setBrakeModeEnabled(true);
+
+        ShooterLeft = new FtcDcMotor("shooterMotor");
+        ShooterLeft.setInverted(false);
+        ShooterLeft.setBrakeModeEnabled(true);
+
+
+        pidCtrl = new TrcPidController(
+                instanceName,
+                RobotInfo.SHOOTER_KP, RobotInfo.SHOOTER_KI, RobotInfo.SHOOTER_KD, RobotInfo.SHOOTER_KF,
+                RobotInfo.SHOOTER_TOLERANCE, RobotInfo.SHOOTER_SETTLING, this);
+        pidMotor = new TrcPidMotor(instanceName, ShooterLeft, pidCtrl);
+        pidMotor = new TrcPidMotor(instanceName, ShooterRight, pidCtrl);
+        pidMotor.setPositionScale(RobotInfo.SHOOTER_DEGREES_PER_COUNT);//do we want this
+
+
+        sm = new TrcStateMachine<>(instanceName);
+        timer = new TrcTimer(instanceName);
+        event = new TrcEvent(instanceName);
+
+
+    }
+
+
+    private void setTaskEnabled(boolean enabled)
+    {
+        if (enabled)
+        {
+            TrcTaskMgr.getInstance().registerTask(instanceName, this, TrcTaskMgr.TaskType.POSTCONTINUOUS_TASK);
+            TrcTaskMgr.getInstance().registerTask(instanceName, this, TrcTaskMgr.TaskType.STOP_TASK);
+        }
+        else
+        {
+            TrcTaskMgr.getInstance().unregisterTask(this, TrcTaskMgr.TaskType.POSTCONTINUOUS_TASK);
+            TrcTaskMgr.getInstance().unregisterTask(this, TrcTaskMgr.TaskType.STOP_TASK);
+        }
+    }
+
+
+    public void stop()
+    {
+        if (sm.isEnabled())
+        {
+            sm.stop();
+        }
+        setTaskEnabled(false);
+        continuousModeOn = false;
+        pidMotor.cancel();
+    }
