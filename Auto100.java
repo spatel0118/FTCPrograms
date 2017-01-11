@@ -1,19 +1,22 @@
-package org.firstinspires.ftc.teamcode;
 
+package org.firstinspires.ftc.teamcode.Autonomous;
 import ftclib.FtcOpMode;
-import trclib.TrcAnalogInput;
 import trclib.TrcDbgTrace;
 import trclib.TrcEvent;
 import trclib.TrcRobot;
 import trclib.TrcStateMachine;
 import trclib.TrcTimer;
 
-public class Auto100 implements TrcRobot.AutoStrategy
+public class CmdAuto100 implements TrcRobot.RobotCommand
 {
+    private static final boolean debugXPid = false;
+    private static final boolean debugYPid = false;
+    private static final boolean debugTurnPid = false;
+    private TrcDbgTrace tracer = FtcOpMode.getGlobalTracer();
+
     private enum State
     {
         NEAR_START,
-        WHISKER_ENABLE,
         TURN_TO_WALL,
         GOTO_WALL,
         PARALLEL_WALL,
@@ -31,9 +34,7 @@ public class Auto100 implements TrcRobot.AutoStrategy
         DONE
     }   //enum State
 
-    private static final String moduleName = "Auto100";
-
-    private TrcDbgTrace tracer = FtcOpMode.getGlobalTracer();
+    private static final String moduleName = "CmdAuto100";
 
     private Robot robot;
     private FtcAuto.Alliance alliance;
@@ -48,8 +49,8 @@ public class Auto100 implements TrcRobot.AutoStrategy
     private TrcStateMachine<State> sm;
     private boolean leftPusherExtended = false;
     private boolean rightPusherExtended = false;
-    private boolean whiskerFindWall      = false;
-    public Auto100(
+
+    public CmdAuto100(
             Robot robot,
             FtcAuto.Alliance alliance,
             double delay,
@@ -72,11 +73,12 @@ public class Auto100 implements TrcRobot.AutoStrategy
         timer = new TrcTimer(moduleName);
         sm = new TrcStateMachine<>(moduleName);
         sm.start(State.NEAR_START);
-    }   //Auto100
+    }   //CmdAuto100
 
     @Override
-    public void autoPeriodic(double elapsedTime)
+    public boolean cmdPeriodic(double elapsedTime)
     {
+        boolean done = !sm.isEnabled();
         //
         // Print debug info.
         //
@@ -91,8 +93,7 @@ public class Auto100 implements TrcRobot.AutoStrategy
             if (Robot.USE_ODS_LINE_DETECTOR)
             {
                 robot.dashboard.displayPrintf(2, "LineDetect: light=%.3f",
-                        (Double)robot.odsLineDetector.getRawData(
-                                0, TrcAnalogInput.DataType.INPUT_DATA).value);
+                        robot.odsLineDetector.sensor.getRawLightDetected());
             }
             else
             {
@@ -108,7 +109,7 @@ public class Auto100 implements TrcRobot.AutoStrategy
                     robot.beaconColorSensor.sensor.argb());
         }
 
-        if (robot.pidDrive.isEnabled())
+        if (robot.pidDrive.isActive())
         {
             robot.encoderXPidCtrl.displayPidInfo(4);
             robot.encoderYPidCtrl.displayPidInfo(6);
@@ -122,72 +123,59 @@ public class Auto100 implements TrcRobot.AutoStrategy
             int redValue, greenValue, blueValue;
             boolean isRed, isBlue;
 
-            if (state != State.NEAR_START)
+            switch (state)
             {
-                robot.traceStateInfo(elapsedTime, state.toString());
-            }
-
-            switch (state) {
                 case NEAR_START:
-                    if (nearStartCmd.cmdPeriodic(elapsedTime)) {
-                        sm.setState(State.WHISKER_ENABLE);
+                    if (nearStartCmd.cmdPeriodic(elapsedTime))
+                    {
+                        sm.setState(State.TURN_TO_WALL);
                     }
                     break;
 
-
-                case WHISKER_ENABLE:
-                    xDistance = yDistance = 0.0;
-                    robot.whisker.setPosition(RobotInfo.FIND_WALL_POSITION);
-
-                    sm.waitForSingleEvent(event, State.TURN_TO_WALL);
-
-
                 case TURN_TO_WALL:
                     xDistance = yDistance = 0.0;
+                    robot.targetHeading = alliance == FtcAuto.Alliance.RED_ALLIANCE? -90.0: 90.0;
 
-                    robot.targetHeading = alliance == FtcAuto.Alliance.RED_ALLIANCE ? -90.0 : 90.0;
-                    robot.setTurnPID(xDistance, yDistance, robot.targetHeading);
-                    robot.pidDrive.setTarget(xDistance, yDistance, robot.targetHeading, false, event);
+                    robot.setPIDDriveTarget(xDistance, yDistance, robot.targetHeading, false, event);
                     sm.waitForSingleEvent(event, State.GOTO_WALL);
                     break;
 
                 case GOTO_WALL:
                     xDistance = 0.0;
-                    yDistance = shortRun ? 22.0 : 16.0;
-                    timer.set(1.5, event);
-                    robot.setTurnPID(xDistance, yDistance, robot.targetHeading);
-                    robot.pidDrive.setTarget(xDistance, yDistance, robot.targetHeading, false, event);
+                    yDistance = shortRun? 22.0: 16.0;
+
+                    robot.setPIDDriveTarget(xDistance, yDistance, robot.targetHeading, false, event);
                     sm.waitForSingleEvent(event, State.PARALLEL_WALL);
                     break;
 
                 case PARALLEL_WALL:
                     xDistance = yDistance = 0.0;
-                    robot.targetHeading = alliance == FtcAuto.Alliance.RED_ALLIANCE ? 0.0 : 180.0;
+                    robot.targetHeading = alliance == FtcAuto.Alliance.RED_ALLIANCE? 0.0: 180.0;
 
-                    robot.setTurnPID(xDistance, yDistance, robot.targetHeading);
-                    robot.pidDrive.setTarget(xDistance, yDistance, robot.targetHeading, false, event);
+                    robot.setPIDDriveTarget(xDistance, yDistance, robot.targetHeading, false, event);
                     sm.waitForSingleEvent(event, State.ALIGN_WALL1);
                     break;
 
                 case ALIGN_WALL1:
-                    robot.driveBase.tankDrive(-1.0, 0.0);
+                    robot.driveBase.tankDrive(-1.0, 0.0);   //changed this
                     timer.set(1.0, event);
                     sm.setState(State.ALIGN_WALL2);
                     break;
 
                 case ALIGN_WALL2:
-                    if (robot.getInput(robot.rangePidCtrl) < 3.5 || event.isSignaled()) {
+                    if (robot.getInput(robot.rangePidCtrl) < 3.5 || event.isSignaled())
+                    {
                         sm.setState(State.ALIGN_WALL3);
                     }
                     break;
 
                 case ALIGN_WALL3:
-                    //robot.driveBase.mecanumDrive_Cartesian(0.0, 0.0, 0.0);
                     robot.driveBase.tankDrive(0.0, 0.0);
 
-                    if (Robot.USE_COLOR_SENSOR) {
-                        robot.beaconColorSensor.setDeviceEnabled(true);
-                    }
+//                    if (Robot.USE_COLOR_SENSOR)
+//                    {
+//                        robot.beaconColorSensor.setDeviceEnabled(true);
+//                    }
 
                     timer.set(0.1, event);
                     sm.waitForSingleEvent(event, State.FIND_LINE);
@@ -195,34 +183,53 @@ public class Auto100 implements TrcRobot.AutoStrategy
 
                 case FIND_LINE:
                     xDistance = 0.0;
-                    if (usePath1) {
+                    if (usePath1)
+                    {
                         // Path1 always back up.
                         yDistance = -30.0;
-                    } else {
+                    }
+                    else
+                    {
                         yDistance = alliance == FtcAuto.Alliance.RED_ALLIANCE && remainingBeaconButtons == 2 ||
-                                alliance == FtcAuto.Alliance.BLUE_ALLIANCE && remainingBeaconButtons == 1 ?
-                                30.0 : -30.0;
+                                alliance == FtcAuto.Alliance.BLUE_ALLIANCE && remainingBeaconButtons == 1?
+                                30.0: -30.0;
                     }
                     robot.targetHeading = robot.driveBase.getHeading();
 
-                    if (Robot.USE_LINE_DETECTOR) {
-                        robot.lineTrigger.setEnabled(true);
+                    if (Robot.USE_LINE_DETECTOR)
+                    {
+                        if (Robot.USE_ODS_LINE_DETECTOR)
+                        {
+                            robot.odsTrigger.setEnabled(true);
+                        }
+                        else
+                        {
+                            robot.colorTrigger.setEnabled(true);
+                        }
                     }
 
                     robot.encoderYPidCtrl.setOutputRange(-0.12, 0.12);
-                    robot.setTurnPID(xDistance, yDistance, robot.targetHeading);
-                    robot.pidDrive.setTarget(xDistance, yDistance, robot.targetHeading, false, event);
+                    robot.setPIDDriveTarget(xDistance, yDistance, robot.targetHeading, false, event);
                     sm.waitForSingleEvent(event, State.PUSH_BUTTON1);
                     break;
 
                 case PUSH_BUTTON1:
                     robot.encoderYPidCtrl.setOutputRange(-1.0, 1.0);
 
-                    if (Robot.USE_LINE_DETECTOR) {
-                        robot.lineTrigger.setEnabled(false);
+                    if (Robot.USE_LINE_DETECTOR)
+                    {
+                        if (Robot.USE_ODS_LINE_DETECTOR)
+                        {
+                            robot.odsTrigger.setEnabled(false);
+                        }
+                        else
+                        {
+                            robot.colorTrigger.setEnabled(false);
+                        }
                     }
 
-                    if (Robot.USE_COLOR_SENSOR) {
+                    if (Robot.USE_COLOR_SENSOR)
+                    {
                         redValue = robot.beaconColorSensor.sensor.red();
                         greenValue = robot.beaconColorSensor.sensor.green();
                         blueValue = robot.beaconColorSensor.sensor.blue();
@@ -240,34 +247,32 @@ public class Auto100 implements TrcRobot.AutoStrategy
                     // Determine which button to push and do it.
                     //
                     if (alliance == FtcAuto.Alliance.RED_ALLIANCE && isRed ||
-                            alliance == FtcAuto.Alliance.BLUE_ALLIANCE && isBlue) {
+                            alliance == FtcAuto.Alliance.BLUE_ALLIANCE && isBlue)
+                    {
                         //
                         // It takes sometime for the button pusher to extend, set a timer to wait for it.
                         //
-                        robot.beaconColorSensor.setDeviceEnabled(false);
+//                        robot.beaconColorSensor.setDeviceEnabled(false);
                         robot.leftButtonPusher.setPosition(RobotInfo.BUTTON_PUSHER_EXTEND_POSITION);
                         leftPusherExtended = true;
                         timer.set(1.5, event);
                         sm.waitForSingleEvent(event, State.RETRACT);
-                        robot.whisker.setPosition(RobotInfo.FIND_WALL_POSITION);
-                        whiskerFindWall = true;
-                        timer.set(1.5, event);
-                    } else if (alliance == FtcAuto.Alliance.RED_ALLIANCE && isBlue ||
-                            alliance == FtcAuto.Alliance.BLUE_ALLIANCE && isRed) {
+                    }
+                    else if (alliance == FtcAuto.Alliance.RED_ALLIANCE && isBlue ||
+                            alliance == FtcAuto.Alliance.BLUE_ALLIANCE && isRed)
+                    {
                         robot.rightButtonPusher.setPosition(RobotInfo.BUTTON_PUSHER_EXTEND_POSITION);
                         rightPusherExtended = true;
                         timer.set(1.5, event);
                         sm.setState(State.PUSH_BUTTON2);
-                       // robot.whisker.setPosition(RobotInfo.FIND_WALL_POSITION);
-                      //  whiskerFindWall = true;
-                       // timer.set(1.5, event);
-                    } else {
+                    }
+                    else
+                    {
                         //
                         // Cannot determine the color, skip it.
                         //
                         sm.setState(State.NEXT_BEACON);
                     }
-
                     robot.dashboard.displayPrintf(
                             15, "leftPusher=%s, rightPusher=%s",
                             Boolean.toString(leftPusherExtended), Boolean.toString(rightPusherExtended));
@@ -295,7 +300,7 @@ public class Auto100 implements TrcRobot.AutoStrategy
                             alliance == FtcAuto.Alliance.RED_ALLIANCE && isRed ||
                             alliance == FtcAuto.Alliance.BLUE_ALLIANCE && isBlue)
                     {
-                        robot.beaconColorSensor.setDeviceEnabled(false);
+//                        robot.beaconColorSensor.setDeviceEnabled(false);
                         sm.setState(State.RETRACT);
                     }
                     break;
@@ -334,8 +339,7 @@ public class Auto100 implements TrcRobot.AutoStrategy
                             yDistance = alliance == FtcAuto.Alliance.RED_ALLIANCE? -40.0: 40.0;
                         }
 
-                        robot.setTurnPID(xDistance, yDistance, robot.targetHeading);
-                        robot.pidDrive.setTarget(xDistance, yDistance, robot.targetHeading, false, event);
+                        robot.setPIDDriveTarget(xDistance, yDistance, robot.targetHeading, false, event);
                         remainingBeaconButtons--;
                         sm.waitForSingleEvent(event, State.ALIGN_WALL1);
                     }
@@ -349,11 +353,10 @@ public class Auto100 implements TrcRobot.AutoStrategy
                         // We are going somewhere. let's get off the wall so we can turn.
                         // We don't have enough time to go to the center vortex, so always head for the corner vortex.
                         //
-                        xDistance = usePath1? 24.0: 36.0;
+                        xDistance = usePath1? 24.0: 40.0;
                         yDistance = 0.0;
 
-                        robot.setTurnPID(xDistance, yDistance, robot.targetHeading);
-                        robot.pidDrive.setTarget(xDistance, yDistance, robot.targetHeading, false, event);
+                        robot.setPIDDriveTarget(xDistance, yDistance, robot.targetHeading, false, event);
                         sm.waitForSingleEvent(event, State.GOTO_VORTEX);
                     }
                     break;
@@ -373,11 +376,10 @@ public class Auto100 implements TrcRobot.AutoStrategy
                     }
                     else
                     {
-                        yDistance = alliance == FtcAuto.Alliance.RED_ALLIANCE ? -36.0 : 36.0;
+                        yDistance = alliance == FtcAuto.Alliance.RED_ALLIANCE ? -48.0 : 36.0;
                     }
 
-                    robot.setTurnPID(xDistance, yDistance, robot.targetHeading);
-                    robot.pidDrive.setTarget(xDistance, yDistance, robot.targetHeading, false, event);
+                    robot.setPIDDriveTarget(xDistance, yDistance, robot.targetHeading, false, event);
                     sm.waitForSingleEvent(event, State.TURN_TO_VORTEX);
                     break;
 
@@ -385,8 +387,7 @@ public class Auto100 implements TrcRobot.AutoStrategy
                     xDistance = yDistance = 0.0;
                     robot.targetHeading = alliance == FtcAuto.Alliance.RED_ALLIANCE? 45.0: 135.0;
 
-                    robot.setTurnPID(xDistance, yDistance, robot.targetHeading);
-                    robot.pidDrive.setTarget(xDistance, yDistance, robot.targetHeading, false, event);
+                    robot.setPIDDriveTarget(xDistance, yDistance, robot.targetHeading, false, event);
                     sm.waitForSingleEvent(event, State.PARK_VORTEX);
                     break;
 
@@ -401,8 +402,7 @@ public class Auto100 implements TrcRobot.AutoStrategy
                         yDistance = parkOption == FtcAuto.ParkOption.PARK_CENTER? -36.0: 36.0;
                     }
 
-                    robot.setTurnPID(xDistance, yDistance, robot.targetHeading);
-                    robot.pidDrive.setTarget(xDistance, yDistance, robot.targetHeading, false, event);
+                    robot.setPIDDriveTarget(xDistance, yDistance, robot.targetHeading, false, event);
                     sm.waitForSingleEvent(event, State.DONE);
                     break;
 
@@ -411,10 +411,40 @@ public class Auto100 implements TrcRobot.AutoStrategy
                     //
                     // We are done.
                     //
+                    done = true;
                     sm.stop();
                     break;
             }
-        }
-    }   //autoPeriodic
 
-}   //class Auto100
+            if (state != State.NEAR_START)
+            {
+                robot.traceStateInfo(elapsedTime, state.toString());
+            }
+        }
+
+        if (robot.pidDrive.isActive() && (debugXPid || debugYPid || debugTurnPid))
+        {
+            tracer.traceInfo("Battery", "Voltage=%5.2fV (%5.2fV)",
+                    robot.battery.getCurrentVoltage(), robot.battery.getLowestVoltage());
+
+            if (debugXPid)
+            {
+                robot.encoderXPidCtrl.printPidInfo(tracer);
+            }
+
+            if (debugYPid)
+            {
+                robot.encoderYPidCtrl.printPidInfo(tracer);
+            }
+
+            if (debugTurnPid)
+            {
+                robot.gyroPidCtrl.printPidInfo(tracer);
+            }
+        }
+
+        return done;
+    }   //cmdPeriodic
+
+}   //class CmdAuto100
+
