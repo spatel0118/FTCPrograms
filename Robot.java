@@ -1,9 +1,4 @@
-package org.firstinspires.ftc.teamcode;
-
-/**
- * Created by SaajanPatel on 12/29/16.
- */
-
+package org.firstinspires.ftc.teamcode.Autonomous;
 
 import android.widget.TextView;
 
@@ -27,6 +22,7 @@ import hallib.HalDashboard;
 import trclib.TrcAnalogTrigger;
 import trclib.TrcDbgTrace;
 import trclib.TrcDriveBase;
+import trclib.TrcEvent;
 import trclib.TrcGyro;
 import trclib.TrcPidController;
 import trclib.TrcPidDrive;
@@ -61,10 +57,10 @@ public class Robot implements TrcPidController.PidInput, TrcAnalogTrigger.Trigge
     //
     // DriveBase subsystem.
     //
-    public FtcDcMotor Left1 = null;
-    public FtcDcMotor Right1 = null;
-    public FtcDcMotor Left2 = null;
-    public FtcDcMotor Right2 = null;
+    public FtcDcMotor leftFrontWheel = null;
+    public FtcDcMotor rightFrontWheel = null;
+    public FtcDcMotor leftRearWheel = null;
+    public FtcDcMotor rightRearWheel = null;
     public TrcDriveBase driveBase = null;
     public FtcRobotBattery battery = null;
     public FtcAndroidTone androidTone = null;
@@ -76,7 +72,8 @@ public class Robot implements TrcPidController.PidInput, TrcAnalogTrigger.Trigge
     public TrcPidDrive pidDrive = null;
     public TrcPidDrive rangePidDrive = null;
 
-    public TrcAnalogTrigger lineTrigger = null;
+    public TrcAnalogTrigger<FtcOpticalDistanceSensor.DataType> odsTrigger = null;
+    public TrcAnalogTrigger<FtcMRColorSensor.DataType> colorTrigger = null;
     public double targetHeading = 0.0;
     //
     // Other subsystems.
@@ -84,7 +81,6 @@ public class Robot implements TrcPidController.PidInput, TrcAnalogTrigger.Trigge
     public Shooter shooter = null;
     public FtcServo leftButtonPusher = null;
     public FtcServo rightButtonPusher = null;
-    public FtcServo whisker = null;
     public FtcDcMotor ballPickUp = null;
     public FtcDcMotor conveyor = null;
 
@@ -118,7 +114,7 @@ public class Robot implements TrcPidController.PidInput, TrcAnalogTrigger.Trigge
         {
             beaconColorSensor = new FtcMRColorSensor("colorSensor");
             beaconColorSensor.sensor.enableLed(false);
-            beaconColorSensor.setEnabled(false);
+//            beaconColorSensor.setDeviceEnabled(false);
         }
 
         if (USE_LINE_DETECTOR)
@@ -132,7 +128,7 @@ public class Robot implements TrcPidController.PidInput, TrcAnalogTrigger.Trigge
                 lineDetectionSensor = new FtcMRColorSensor("lineDetectionSensor");
                 lineDetectionSensor.sensor.setI2cAddress(I2cAddr.create8bit(0x40));
                 lineDetectionSensor.sensor.enableLed(true);
-                lineDetectionSensor.setEnabled(false);
+//                lineDetectionSensor.setDeviceEnabled(false);
             }
         }
 
@@ -143,28 +139,28 @@ public class Robot implements TrcPidController.PidInput, TrcAnalogTrigger.Trigge
         //
         // Initialize DriveBase.
         //
-        Left1 = new FtcDcMotor("leftFrontWheel");
-        Right1 = new FtcDcMotor("rightFrontWheel");
-        Left2 = new FtcDcMotor("leftRearWheel");
-        Right2 = new FtcDcMotor("rightRearWheel");
+        leftFrontWheel = new FtcDcMotor("leftFrontWheel");
+        rightFrontWheel = new FtcDcMotor("rightFrontWheel");
+        leftRearWheel = new FtcDcMotor("leftRearWheel");
+        rightRearWheel = new FtcDcMotor("rightRearWheel");
 
-        Left1.motor.setMaxSpeed(RobotInfo.DRIVE_MAX_SPEED);
-        Right1.motor.setMaxSpeed(RobotInfo.DRIVE_MAX_SPEED);
-        Left2.motor.setMaxSpeed(RobotInfo.DRIVE_MAX_SPEED);
-        Right2.motor.setMaxSpeed(RobotInfo.DRIVE_MAX_SPEED);
-        Left1.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-        Right1.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-        Left2.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-        Right2.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+        leftFrontWheel.motor.setMaxSpeed(RobotInfo.DRIVE_MAX_SPEED);
+        rightFrontWheel.motor.setMaxSpeed(RobotInfo.DRIVE_MAX_SPEED);
+        leftRearWheel.motor.setMaxSpeed(RobotInfo.DRIVE_MAX_SPEED);
+        rightRearWheel.motor.setMaxSpeed(RobotInfo.DRIVE_MAX_SPEED);
+        leftFrontWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+        rightFrontWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+        leftRearWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+        rightRearWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
 
-        Left1.setInverted(true);
-        Left2.setInverted(true);
+        leftFrontWheel.setInverted(true);
+        leftRearWheel.setInverted(true);
 
-        driveBase = new TrcDriveBase(Left1, Left2, Right1, Right2, gyro);
+        driveBase = new TrcDriveBase(leftFrontWheel, leftRearWheel, rightFrontWheel, rightRearWheel, gyro);
         driveBase.setXPositionScale(RobotInfo.ENCODER_X_INCHES_PER_COUNT);
         driveBase.setYPositionScale(RobotInfo.ENOCDER_Y_INCHES_PER_COUNT);
 
-        battery = new FtcRobotBattery(Left1.motor.getController());
+        battery = new FtcRobotBattery(leftFrontWheel.motor.getController());
         //
         // Initialize tone device.
         //
@@ -210,11 +206,14 @@ public class Robot implements TrcPidController.PidInput, TrcAnalogTrigger.Trigge
 
             if (USE_ODS_LINE_DETECTOR)
             {
-                lineTrigger = new TrcAnalogTrigger("lineTrigger", odsLineDetector, 0, lightZones, this);
+                odsTrigger = new TrcAnalogTrigger<>(
+                        "odsTrigger", odsLineDetector, 0, FtcOpticalDistanceSensor.DataType.RAW_LIGHT_DETECTED,
+                        lightZones, this);
             }
             else
             {
-                lineTrigger = new TrcAnalogTrigger("lineTrigger", lineDetectionSensor, 0, lightZones, this);
+                colorTrigger = new TrcAnalogTrigger<>(
+                        "colorTrigger", lineDetectionSensor, 0, FtcMRColorSensor.DataType.WHITE, lightZones, this);
             }
         }
 
@@ -235,12 +234,11 @@ public class Robot implements TrcPidController.PidInput, TrcAnalogTrigger.Trigge
         leftButtonPusher.setPosition(RobotInfo.BUTTON_PUSHER_RETRACT_POSITION);
         rightButtonPusher = new FtcServo("rightButtonPusherServo");
         rightButtonPusher.setPosition(RobotInfo.BUTTON_PUSHER_RETRACT_POSITION);
-        whisker = new FtcServo("whiskerServo");
-        whisker.setPosition(RobotInfo.FIND_WALL_POSITION);
-        //ballPickUp = new FtcDcMotor("pickUpMotor");
-       // ballPickUp.setInverted(true);
 
-        //conveyor = new FtcDcMotor("conveyorMotor");
+        ballPickUp = new FtcDcMotor("pickUpMotor");
+        ballPickUp.setInverted(true);
+
+        conveyor = new FtcDcMotor("conveyorMotor");
     }   //Robot
 
     public void startMode(TrcRobot.RunMode runMode)
@@ -314,7 +312,7 @@ public class Robot implements TrcPidController.PidInput, TrcAnalogTrigger.Trigge
     public void AnalogTriggerEvent(TrcAnalogTrigger analogTrigger, int zoneIndex, double zoneValue)
     {
         tracer.traceInfo(moduleName, "%s: Entering zone %d (%.2f).", analogTrigger.toString(), zoneIndex, zoneValue);
-        if (analogTrigger == lineTrigger && pidDrive.isEnabled())
+        if ((analogTrigger == odsTrigger || analogTrigger == colorTrigger) && pidDrive.isActive())
         {
             if (zoneIndex > 0)
             {
@@ -326,38 +324,72 @@ public class Robot implements TrcPidController.PidInput, TrcAnalogTrigger.Trigge
         }
     }   //AnalogTriggerEvent
 
-    public void setTurnPID(double xDistance, double yDistance, double heading)
+    private void setDrivePID(double xDistance, double yDistance, double heading)
     {
         double degrees = Math.abs(heading - driveBase.getHeading());
-
-        if (xDistance != 0.0 || yDistance != 0)
-        {
-            gyroPidCtrl.setPID(RobotInfo.GYRO_KP, RobotInfo.GYRO_KI, RobotInfo.GYRO_KD, 0.0);
-        }
-        else if (degrees < RobotInfo.SMALL_TURN_THRESHOLD)
-        {
-            //
-            // We are turning a small angle, use stronger PID.
-            //
-            gyroPidCtrl.setPID(RobotInfo.GYRO_SMALL_TURN_KP, RobotInfo.GYRO_SMALL_TURN_KI,
-                    RobotInfo.GYRO_SMALL_TURN_KD, 0.0);
-        }
-        else if (degrees < RobotInfo.LARGE_TURN_THRESHOLD)
+        xDistance = Math.abs(xDistance);
+        yDistance = Math.abs(yDistance);
+        //
+        // No oscillation if turn-only.
+        //
+        boolean noOscillation = degrees != 0.0 && xDistance == 0.0 && yDistance == 0.0;
+        gyroPidCtrl.setNoOscillation(noOscillation);
+        tracer.traceInfo("setDrivePID", "NoOscillation=%s", Boolean.toString(noOscillation));
+        if (xDistance != 0.0 && xDistance < RobotInfo.SMALL_X_THRESHOLD)
         {
             //
-            // We are turning a medium angle, use normal PID.
+            // Small X movement, use stronger X PID to overcome friction.
             //
-            gyroPidCtrl.setPID(RobotInfo.GYRO_KP, RobotInfo.GYRO_KI, RobotInfo.GYRO_KD, 0.0);
+            encoderXPidCtrl.setPID(
+                    RobotInfo.ENCODER_SMALL_X_KP, RobotInfo.ENCODER_SMALL_X_KI, RobotInfo.ENCODER_SMALL_X_KD, 0.0);
         }
         else
         {
             //
-            // We are turning a large angle, use weaker PID.
+            // Use normal X PID.
             //
-            gyroPidCtrl.setPID(RobotInfo.GYRO_LARGE_TURN_KP, RobotInfo.GYRO_LARGE_TURN_KI,
-                    RobotInfo.GYRO_LARGE_TURN_KD, 0.0);
+            encoderXPidCtrl.setPID(RobotInfo.ENCODER_X_KP, RobotInfo.ENCODER_X_KI, RobotInfo.ENCODER_X_KD, 0.0);
         }
-    }   //setTurnPID
+
+        if (yDistance != 0.0 && yDistance < RobotInfo.SMALL_Y_THRESHOLD)
+        {
+            //
+            // Small Y movement, use stronger Y PID to overcome friction.
+            //
+            encoderYPidCtrl.setPID(
+                    RobotInfo.ENCODER_SMALL_Y_KP, RobotInfo.ENCODER_SMALL_Y_KI, RobotInfo.ENCODER_SMALL_Y_KD, 0.0);
+        }
+        else
+        {
+            //
+            // Use normal Y PID.
+            //
+            encoderYPidCtrl.setPID(RobotInfo.ENCODER_Y_KP, RobotInfo.ENCODER_Y_KI, RobotInfo.ENCODER_Y_KD, 0.0);
+        }
+
+        if (degrees != 0.0 && degrees < RobotInfo.SMALL_TURN_THRESHOLD)
+        {
+            //
+            // Small turn, use stronger turn PID to overcome friction.
+            //
+            gyroPidCtrl.setPID(
+                    RobotInfo.GYRO_SMALL_TURN_KP, RobotInfo.GYRO_SMALL_TURN_KI, RobotInfo.GYRO_SMALL_TURN_KD, 0.0);
+        }
+        else
+        {
+            //
+            // Use normal Y PID.
+            //
+            gyroPidCtrl.setPID(RobotInfo.GYRO_KP, RobotInfo.GYRO_KI, RobotInfo.GYRO_KD, 0.0);
+        }
+    }   //setDrivePID
+
+    public void setPIDDriveTarget(
+            double xDistance, double yDistance, double heading, boolean holdTarget, TrcEvent event)
+    {
+        setDrivePID(xDistance, yDistance, heading);
+        pidDrive.setTarget(xDistance, yDistance, heading, holdTarget, event);
+    }   //setPIDDriveTarget
 
     public void traceStateInfo(double elapsedTime, String stateName)
     {
@@ -369,8 +401,8 @@ public class Robot implements TrcPidController.PidInput, TrcAnalogTrigger.Trigge
     }   //traceStateInfo
 
     public double selectParameter(
-            boolean startNear, FtcAuto.Alliance alliance,
-            double nearRed, double nearBlue, double farRed, double farBlue)
+            boolean startNear, FtcAuto.Alliance alliance, double nearRed, double nearBlue,
+            double farRed, double farBlue)
     {
         if (startNear)
         {
