@@ -43,7 +43,9 @@ import com.qualcomm.robotcore.hardware.Servo;
     /**
      *  Hold right trigger to shoot, press lightly to shoot slower
      */
+
     @Override
+
     public void loop() {
         /**
          *  Driving the Robot using left and right stick
@@ -60,32 +62,33 @@ import com.qualcomm.robotcore.hardware.Servo;
         drivetrain.Right2.setPower(right);
 
         //Press a to have to move servos out
-        if (joy1.toggle.a)
+
+        if (joy2.toggle.a)
         {
-            for (int i = 0; i < 2; i++) {
-                leftServo.setPosition(0.0);
-                rightServo.setPosition(0.0);
-            }
+                leftServo.setPosition(0.6);
+                rightServo.setPosition(0.4);
         }
-        else
-        {
-            leftServo.setPosition(1.0);
+
+        if (joy2.toggle.y)       {
+            leftServo.setPosition(0.0);
             rightServo.setPosition(1.0);
         }
 
+
+
         double posLeft = leftServo.getPosition();
         double posRight = rightServo.getPosition();
-        telemetry.addData("Test servo position: ", Double.toString(posLeft));
-        telemetry.addData("Test servo position: ", Double.toString(posRight));
+        telemetry.addData("Left Seervo position: ", Double.toString(posLeft));
+        telemetry.addData("Right servo position: ", Double.toString(posRight));
 
         //Toggle left bumper for pickup
 
-        if (joy1.toggle.left_bumper) {
+        if (joy2.toggle.left_bumper) {
             Pickup.Reverse();
             Pickup.run();
 
         }
-        else if (!joy1.toggle.b &&!joy1.toggle.left_bumper)   {
+        else if (!joy2.toggle.b &&!joy2.toggle.left_bumper)   {
             Pickup.Reverse();
             Pickup.stop();
 
@@ -97,7 +100,7 @@ import com.qualcomm.robotcore.hardware.Servo;
          */
 
 
-        if (joy1.toggle.right_bumper){
+        if (joy2.toggle.right_bumper){
 
         Shooter.run();
         }
@@ -113,18 +116,18 @@ import com.qualcomm.robotcore.hardware.Servo;
          *  Press B to reverse Pickup
          */
 
-        if (joy1.toggle.b  ) {
+        if (joy2.toggle.b  ) {
             Pickup.Forward();
             Pickup.run();
         }
-        else if (!joy1.toggle.left_bumper && !joy1.toggle.b  ){
+        else if (!joy2.toggle.left_bumper && !joy2.toggle.b  ){
             Pickup.Reverse();
             Pickup.stop();
 
 
         }
 
-        if (joy1.toggle.back  ) {
+        if (joy2.toggle.back  ) {
             Pickup.stop();
             Pickup.Forward();
             Shooter.stop();
