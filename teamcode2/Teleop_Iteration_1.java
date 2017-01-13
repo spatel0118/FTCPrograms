@@ -1,32 +1,36 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.Teleop;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.Servo;
 
 /**
  * Created by SaajanPatel on 12/3/16.
  */
 
 @TeleOp(name="Teleop version 1.0", group="Teleop2016")
-class Teleop_Iteration_1 extends OpMode{
+    class Teleop_Iteration_1 extends OpMode{
     GamepadWrapper joy1;
     GamepadWrapper joy2;
     Drivetrain drivetrain = new Drivetrain();
     ParticleAccelerator Shooter;
-    Pickup Pickup;
-    //Column column;
+    org.firstinspires.ftc.teamcode.Teleop.Pickup Pickup;
+    Servo leftServo;
+    Servo rightServo;
+
 
     @Override
     public void init() {
         drivetrain.init(hardwareMap);
         Pickup = new Pickup("Pickup", hardwareMap);
         Shooter = new ParticleAccelerator("ShooterLeft", "ShooterRight", hardwareMap);
-        // column = new Column("Column", hardwareMap);
+        leftServo = hardwareMap.servo.get("left servo");
+        rightServo = hardwareMap.servo.get("right servo");
+
         joy1 = new GamepadWrapper();
         joy2 = new GamepadWrapper();
+
     }
+
 
     @Override
     public void init_loop(){
@@ -55,27 +59,41 @@ class Teleop_Iteration_1 extends OpMode{
         drivetrain.Right1.setPower(right);
         drivetrain.Right2.setPower(right);
 
+        //Press a to have to move servos out
+        if (joy1.toggle.a)
+        {
+            for (int i = 0; i < 2; i++) {
+                leftServo.setPosition(0.0);
+                rightServo.setPosition(0.0);
+            }
+        }
+        else
+        {
+            leftServo.setPosition(1.0);
+            rightServo.setPosition(1.0);
+        }
 
-        /**
-         *  Hold right trigger to pickup, press lightly to pickup slower
-         */
+        double posLeft = leftServo.getPosition();
+        double posRight = rightServo.getPosition();
+        telemetry.addData("Test servo position: ", Double.toString(posLeft));
+        telemetry.addData("Test servo position: ", Double.toString(posRight));
 
-
+        //Toggle left bumper for pickup
 
         if (joy1.toggle.left_bumper) {
-            Pickup.Forward();
+            Pickup.Reverse();
             Pickup.run();
 
         }
         else if (!joy1.toggle.b &&!joy1.toggle.left_bumper)   {
-            Pickup.Forward();
+            Pickup.Reverse();
             Pickup.stop();
 
         }
 
 
         /**
-         *  Hold right trigger to shoot, press lightly to shoot slower
+         *  Toggle right bumper to shoots
          */
 
 
@@ -90,34 +108,19 @@ class Teleop_Iteration_1 extends OpMode{
         }
 
 
-        /**
-         *  Press a to Pickup and Shoot
-         */
 
-
-      /*  if (joy1.toggle.a) {
-            Shooter.run();
-
-            Pickup.run();
-        }
-        else {
-            Shooter.stop();
-
-            Pickup.stop();
-        }
-*/
         /**
          *  Press B to reverse Pickup
          */
 
         if (joy1.toggle.b  ) {
-            Pickup.Reverse();
+            Pickup.Forward();
             Pickup.run();
         }
         else if (!joy1.toggle.left_bumper && !joy1.toggle.b  ){
-            Pickup.Forward();
+            Pickup.Reverse();
             Pickup.stop();
-            Pickup.stop();
+
 
         }
 
@@ -141,6 +144,7 @@ class Teleop_Iteration_1 extends OpMode{
 
         telemetry.addData("Pickup", Pickup);
 
+        telemetry.update();
 
     }
 }
